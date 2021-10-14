@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
           // primarySwatch:
           ),
       themeMode: ThemeMode.system,
-      home: const HomeView(),
+      home: HomeView(),
     );
   }
 }

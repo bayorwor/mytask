@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:todo_app/controllers/todo_controller.dart';
+import 'package:todo_app/models/todo.dart';
 import 'package:todo_app/shared_widgets/todo_tile.dart';
 import 'package:todo_app/utils/utils.dart';
 import 'package:todo_app/views/create_todo_view.dart';
 
-class HomeView extends StatefulWidget {
-  const HomeView({Key? key}) : super(key: key);
+class HomeView extends StatelessWidget {
+  HomeView({Key? key}) : super(key: key);
+  final TodoController _todoController = TodoController();
 
-  @override
-  _HomeViewState createState() => _HomeViewState();
-}
-
-class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,21 +31,31 @@ class _HomeViewState extends State<HomeView> {
           IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
         ],
       ),
-      body: ListView.separated(
-        shrinkWrap: true,
-        padding: const EdgeInsets.all(15),
-        itemBuilder: (context, index) {
-          return const TodoTileWidget(
-            status: false,
-          );
-        },
-        separatorBuilder: (context, index) {
-          return const SizedBox(
-            height: 10,
-          );
-        },
-        itemCount: 10,
-      ),
+      body: FutureBuilder<Todo?>(
+          future: _todoController.getAllTodos(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                snapshot.data == null) {
+              return CircularProgressIndicator.adaptive();
+            }
+            if (snapshot.connectionState == ConnectionState.done &&
+                snapshot.data == null) {
+              return Text("No data available");
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(15),
+              itemBuilder: (context, index) {
+                return TodoTileWidget(todo: snapshot.data!.data![index]);
+              },
+              separatorBuilder: (context, index) {
+                return const SizedBox(
+                  height: 10,
+                );
+              },
+              itemCount: snapshot.data!.data!.length,
+            );
+          }),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) {
@@ -113,26 +121,41 @@ class _HomeViewState extends State<HomeView> {
 }
 
 class CompletedTodoWidget extends StatelessWidget {
-  const CompletedTodoWidget({
+  CompletedTodoWidget({
     Key? key,
   }) : super(key: key);
 
+  final TodoController _todoController = TodoController();
+
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(15),
-      itemBuilder: (context, index) {
-        return const TodoTileWidget(
-          status: true,
-        );
-      },
-      separatorBuilder: (context, index) {
-        return const SizedBox(
-          height: 10,
-        );
-      },
-      itemCount: 10,
-    );
+    return FutureBuilder<Todo?>(
+        future: _todoController.getAllTodos(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null) {
+            return const CircularProgressIndicator.adaptive();
+          }
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.data == null) {
+            return const Text("No data available");
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(15),
+            itemBuilder: (context, index) {
+              if (snapshot.data!.data![index].status) {
+                return TodoTileWidget(todo: snapshot.data!.data![index]);
+              } else {
+                return SizedBox.shrink();
+              }
+            },
+            separatorBuilder: (context, index) {
+              return const SizedBox(
+                height: 10,
+              );
+            },
+            itemCount: snapshot.data!.data!.length,
+          );
+        });
   }
 }
